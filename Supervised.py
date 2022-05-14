@@ -1,9 +1,11 @@
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.model_selection import train_test_split
 from sklearn.naive_bayes import MultinomialNB
-from sklearn.metrics import confusion_matrix
+#from sklearn.metrics import confusion_matrix
 from sklearn.metrics import classification_report
 from sklearn.metrics import accuracy_score
+from sklearn.model_selection import cross_val_score
+
 
 def processingTfIdf(reviewText, sentiment):
     X_train, X_test, Y_train, Y_test = train_test_split(reviewText, sentiment, test_size=0.3)
@@ -28,4 +30,23 @@ def multinb(textReview, sentiment):
     print()
     #print(confusion_matrix(y_true, y_pred))
     print(classification_report(y_true, y_pred, target_names=["Negativo", "Positivo"]))
-    #kCrossValidation(nb, description, continent)
+    kCrossValidation(nb, textReview, sentiment)
+    
+def kCrossValidation(model, x, y):
+    vectorizer = TfidfVectorizer(sublinear_tf=True, max_df=0.5)
+    x_mod = vectorizer.fit_transform(x)
+    k = []
+    acc = []
+    dev = []
+
+    #nota, non viene effettuato lo shuffle dei fold, quindi sono sempre gli stessi, sono già istanziati
+    for i in range(10, 16):
+        scores = cross_val_score(model, x_mod, y, cv=i)
+        print("K cross validation, k= ", i)
+        k.append(i)
+        print("Average scores: ", scores.mean())
+        acc.append(scores.mean())
+        print("Standard Deviation of scores: ", scores.std())
+        dev.append(scores.std())
+        print("\n\n")
+    
