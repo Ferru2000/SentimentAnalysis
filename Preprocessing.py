@@ -24,8 +24,8 @@ def addSentimentColumn(dataset):
     if not 'sentiment' in dataset:
         dataset.insert(3, 'sentiment', 0)
     
-    dataset.loc[dataset["rating"] == 1, "sentiment"] = -1
-    dataset.loc[dataset["rating"] == 2, "sentiment"] = -1
+    dataset.loc[dataset["rating"] == 1, "sentiment"] = 0
+    dataset.loc[dataset["rating"] == 2, "sentiment"] = 0
     dataset.loc[dataset["rating"] == 3, "sentiment"] = 0
     dataset.loc[dataset["rating"] == 4, "sentiment"] = 1
     dataset.loc[dataset["rating"] == 5, "sentiment"] = 1
