@@ -9,9 +9,9 @@ from nltk.stem import WordNetLemmatizer
     Questa funzione converte tutte le lettere maiuscole in minuscole presenti
     nella colonna reviewText
 '''
-def text_lowerer(dataframe):
+def text_lowerer(dataframe, column):
     # lowering delle lettere nella colonna reviewText
-    dataframe["reviewText"] = dataframe["reviewText"].str.lower()
+    dataframe[column] = dataframe[column].str.lower()
     return dataframe
     
 '''
