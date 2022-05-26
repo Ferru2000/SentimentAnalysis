@@ -5,6 +5,8 @@ from sklearn.preprocessing import OneHotEncoder
 
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
+
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.model_selection import train_test_split
 from sklearn.naive_bayes import MultinomialNB
@@ -13,9 +15,13 @@ from sklearn.metrics import accuracy_score
 from sklearn.model_selection import cross_val_score
 
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.model_selection import RandomizedSearchCV, GridSearchCV
+from sklearn.model_selection import GridSearchCV
 from sklearn.feature_selection import SelectFromModel
 from sklearn import metrics
+
+from sklearn.neighbors import KNeighborsClassifier
+
+import math
 
 random_seed = 3
 
@@ -51,7 +57,7 @@ def randomForest_parameterTuning(dataset, labels):
 def randomForest_featureSelection(dataset, labels):
     X_train, X_test, Y_train, Y_test = train_test_split(dataset, labels, test_size=0.2, random_state=random_seed)
     
-    rf = RandomForestClassifier(criterion = 'entropy')
+    rf = RandomForestClassifier(criterion = 'entropy', random_state=random_seed)
     rf.fit(X_train, Y_train)
     y_pred=rf.predict(X_test)
     
@@ -60,7 +66,7 @@ def randomForest_featureSelection(dataset, labels):
     # feature selection
     sel = SelectFromModel(rf, prefit=True)
     selected_feat = dataset.columns[(sel.get_support())]
-    print(len(selected_feat))
+    print("Numero feature selezionate: " + str(len(selected_feat)))
 
     truncated_df = dataset.loc[:, sel.get_support()]
     return truncated_df
@@ -107,26 +113,68 @@ def multinomialNaiveBayes(dataset, labels):
     print(classification_report(y_true, y_pred, target_names=["Negativo", "Positivo"]))
     kCrossValidation(nb, dataset, labels)
 
-'''
-def kCrossValidation(model, x, y):
-    vectorizer = TfidfVectorizer(sublinear_tf=True, max_df=0.5)
-    x_mod = vectorizer.fit_transform(x)
-    k = []
-    acc = []
-    dev = []
-
-    #nota, non viene effettuato lo shuffle dei fold, quindi sono sempre gli stessi, sono già istanziati
-    for i in range(10, 16):
-        scores = cross_val_score(model, x_mod, y, cv=i)
-        print("K cross validation, k= ", i)
-        k.append(i)
-        print("Average scores: ", scores.mean())
-        acc.append(scores.mean())
-        print("Standard Deviation of scores: ", scores.std())
-        dev.append(scores.std())
+def findBestK(dataset, labels):
+    X_train, X_test, Y_train, Y_test = train_test_split(dataset, labels, test_size=0.2, random_state=random_seed)
+    error = []
+    
+    acc_train = []
+    acc_test = []
+    max_acc_test = 0
+    max_acc_train = 0
+    best_k = 0
+    
+    root = int(math.sqrt(X_train.shape[0]))
+    k = [9,11,13,15,17,19]
+    k.append(root)
+    
+    for i in k:
+        print(i)
+        knn = KNeighborsClassifier(n_neighbors=i)
+        knn.fit(X_train, Y_train)
+        pred_i = knn.predict(X_test)
+        error.append(np.mean(pred_i != Y_test))
         
-        print("\n\n")
-'''
+        print("train: ", knn.score(X_train, Y_train))
+        print("test: ", knn.score(X_test, Y_test))
+        acc_train.append(knn.score(X_train, Y_train))
+        acc_test.append(knn.score(X_test, Y_test))
+        if knn.score(X_train, Y_train) >= max_acc_train and knn.score(X_test, Y_test) >= max_acc_test:
+            best_k = i
+            max_acc_test = knn.score(X_test, Y_test)
+            max_acc_train = knn.score(X_train, Y_train)
+        
+    print(error)
+    
+    x=[9,11,13,15,17,19,97]
+    values = range(len(x))
+
+    plt.figure(figsize=(12, 6))
+    plt.xticks(values,x)
+    plt.plot(values, error, color='red', linestyle='dashed', marker='o',
+             markerfacecolor='blue', markersize=10)
+    plt.title('Error Rate K Value')
+    plt.xlabel('K Value')
+    plt.ylabel('Mean Error')
+
+    return best_k
+
+def knn(dataset, labels):  #KNN
+    #features_train, features_test, labels_train, labels_test = processing(description, continent)
+    X_train, X_test, Y_train, Y_test = train_test_split(dataset, labels, test_size=0.2, random_state=random_seed)
+    
+    #bestK = maxK(features_train, features_test, labels_train, labels_test)
+    k = findBestK(dataset, labels)
+    knc = KNeighborsClassifier(n_neighbors=k, weights="distance")
+    knc.fit(X_train, Y_train)
+
+    y_pred = knc.predict(X_test)
+    y_true = Y_test
+
+    print(accuracy_score(y_true, y_pred))
+    #print(confusion_matrix(y_true, y_pred))
+    print(classification_report(y_true, y_pred, target_names=["Negativo", "Positivo",]))
+
+    kCrossValidation(knc, dataset, labels)
 
 def my_roc_auc_score(model, truncated_df, labels):
     return metrics.roc_auc_score(labels, model.predict(truncated_df))
