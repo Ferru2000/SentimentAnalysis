@@ -19,6 +19,8 @@ from sklearn.model_selection import GridSearchCV
 from sklearn.feature_selection import SelectFromModel
 from sklearn import metrics
 
+from sklearn.neural_network import MLPClassifier
+
 from sklearn.neighbors import KNeighborsClassifier
 
 import math
@@ -95,9 +97,7 @@ def randomForest(dataset, labels, best_params):
     print("Accuracy:",metrics.accuracy_score(y_pred, Y_test))
     print(classification_report(Y_test, y_pred, target_names=["Negativo", "Positivo"]))
     kCrossValidation(rf, dataset, labels)
-    
-    return rf
-    
+        
     
 def multinomialNaiveBayes(dataset, labels):
     X_train, X_test, Y_train, Y_test = train_test_split(dataset, labels, test_size=0.2, random_state=random_seed)
@@ -175,6 +175,63 @@ def knn(dataset, labels):  #KNN
     print(classification_report(y_true, y_pred, target_names=["Negativo", "Positivo",]))
 
     kCrossValidation(knc, dataset, labels)
+
+def neuralNetwork_parameter(dataset, labels):
+    X_train, X_test, Y_train, Y_test = train_test_split(dataset, labels, test_size=0.2, random_state=random_seed)
+    mlp = MLPClassifier(max_iter=200, random_state = random_seed)
+    
+    
+    parameter_space = {
+    'hidden_layer_sizes': [(200,150,100)],
+    'activation': ['relu', 'logistic'],
+    'solver': ['adam', 'sgd'],
+    'alpha': [0.005, 0.0001],
+    'learning_rate': ['constant'],
+    }
+    clf = GridSearchCV(mlp, parameter_space, n_jobs=-1, cv=3)
+    clf.fit(X_train, Y_train)
+
+    # Best paramete set
+    print('Parametri migliori:\n', clf.best_params_)
+
+    # All results
+    means = clf.cv_results_['mean_test_score']
+    stds = clf.cv_results_['std_test_score']
+    for mean, std, params in zip(means, stds, clf.cv_results_['params']):
+        print("%0.3f (+/-%0.03f) for %r" % (mean, std * 2, params))
+        
+    return clf.best_params_
+
+def neuralNetwork(dataset, labels):
+    X_train, X_test, Y_train, Y_test = train_test_split(dataset, labels, test_size=0.2, random_state=random_seed)
+    
+    best_params = neuralNetwork_parameter(dataset, labels) 
+    
+    hidden_layer_sizes_found = best_params.get('hidden_layer_sizes')
+    activation_found = best_params.get('activation')
+    solver_found = best_params.get('solver')
+    alpha_found = best_params.get('alpha')
+    learning_rate_found = best_params.get('learning_rate')
+    
+    mlp = MLPClassifier(max_iter=200, 
+                        random_state = random_seed,
+                        hidden_layer_sizes = hidden_layer_sizes_found,
+                        activation = activation_found,
+                        solver = solver_found,
+                        alpha = alpha_found,
+                        learning_rate = learning_rate_found
+                       )
+    
+        
+    mlp.fit(X_train, Y_train)
+    y_pred = mlp.predict(X_test)
+    y_true = Y_test
+
+    print("Accuracy: ", accuracy_score(y_pred, y_true))
+    
+    print()
+    print(classification_report(y_true, y_pred, target_names=["Negativo", "Positivo"]))
+    #kCrossValidation(mlp, dataset, labels)
 
 def my_roc_auc_score(model, truncated_df, labels):
     return metrics.roc_auc_score(labels, model.predict(truncated_df))
