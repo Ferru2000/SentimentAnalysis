@@ -6,6 +6,7 @@ from sklearn.preprocessing import OneHotEncoder
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+from sklearn.metrics import plot_confusion_matrix
 
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.model_selection import train_test_split
@@ -23,7 +24,11 @@ from sklearn.neural_network import MLPClassifier
 
 from sklearn.neighbors import KNeighborsClassifier
 
+from sklearn.svm import SVC
+
 import math
+
+from sklearn.decomposition import PCA
 
 random_seed = 3
 
@@ -233,6 +238,36 @@ def neuralNetwork(dataset, labels):
     print(classification_report(y_true, y_pred, target_names=["Negativo", "Positivo"]))
     #kCrossValidation(mlp, dataset, labels)
 
+
+def supportVectorMachine(dataset, labels):
+    X_train, X_test, Y_train, Y_test = train_test_split(dataset, labels, test_size=0.2, random_state=random_seed)
+    
+    # valori su cui ho ottimizzato il classificatore SVC
+    # kernel_values = ['linear', 'poly', 'rbf', 'sigmoid']
+    # C_values = [0.5,1,10,100]
+    # gamma_values = ['scale', 1, 0.1, 0.01, 0.001, 0.0001]
+    
+    # parametri ottimizzati
+    kernel_found = 'linear'
+    C_found = 0.5
+    gamma_found = 0.0001
+    
+    svm = SVC(random_state=random_seed, kernel = kernel_found, C = C_found, gamma = gamma_found)
+    svm.fit(X_train, Y_train)
+    
+    y_pred=svm.predict(X_test)
+    
+    print("Accuracy:",metrics.accuracy_score(y_pred, Y_test))
+    print("Precision:",metrics.precision_score(y_pred, Y_test))
+    print("Recall:",metrics.recall_score(y_pred, Y_test))
+    print(classification_report(Y_test, y_pred, target_names=["Negativo", "Positivo"]))
+    plot_confusion_matrix(svm,
+                     X_test,
+                     Y_test,
+                     values_format='d',
+                     display_labels=["Negativo", "Positivo"])
+    #kCrossValidation(svm, dataset, labels)
+    
 def my_roc_auc_score(model, truncated_df, labels):
     return metrics.roc_auc_score(labels, model.predict(truncated_df))
 
