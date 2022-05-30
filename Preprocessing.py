@@ -42,6 +42,11 @@ def countWords(list_word, text):
         if i != len(list_word) and list_word[i] == word:
             count = count + 1
     
+    if len(splitted_text) == 0:
+        return 0
+    
+    count = count / len(splitted_text)
+    count = round(count, 2)
     return count
 
 def addNumberPositiveReview(dataset):
