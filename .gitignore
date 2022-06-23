@@ -1,1 +1,11 @@
-*.csv
+clean_dataset.csv
+featureSelectionReview_df.csv
+featureSelectionSummary_df.csv
+X_test_Review.csv
+X_test_Summary.csv
+X_train_Review.csv
+X_train_Summary.csv
+Y_test_Review.csv
+Y_test_Summary.csv
+Y_train_Review.csv
+Y_train_Summary.csv
